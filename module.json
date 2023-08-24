@@ -1,0 +1,42 @@
+{
+  "id": "pf2e-dying",
+  "title": "PF2e Dying",
+  "description": "PF2e Dying.",
+  "version": "0.0.1",
+  "authors": [
+    {
+      "name": "Reyzor",
+      "url": "https://github.com/reyzor1991",
+      "discord": "reyzor1991"
+    }
+  ],
+  "languages": [],
+  "esmodules": [
+    "pf2e-dying.js"
+  ],
+  "styles": [
+  ],
+  "packFolders": [],
+  "packs": [],
+  "media": [],
+  "compatibility": {
+    "minimum": "11",
+    "verified": "11.307"
+  },
+  "manifest": "https://drive.usercontent.google.com/download?id=1bC8VoYF4hQu65LqXhtdl6llYjlDCHhWG",
+  "download": "https://drive.usercontent.google.com/download?id=1FLcVfVqQ1fzy-xbzNhdMucDsIen15Ohn",
+  "relationships": {
+    "systems": [
+      {
+        "id": "pf2e",
+        "type": "system",
+        "manifest": "https://github.com/foundryvtt/pf2e/releases/latest/download/system.json",
+        "compatibility": {
+          "minimum": "5.0.2",
+          "verified": "5.3.1"
+        }
+      }
+    ],
+    "requires": []
+  }
+}
