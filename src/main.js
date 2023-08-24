@@ -46,8 +46,10 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
 
 Hooks.on('updateActor', async (actor, data, diff, id) => {
     if (!game.settings.get(moduleName, "removeUnconsciousWhenHeal")) {return;}
-    if (data?.system?.attributes?.hp?.value > 0 && hasCondition(actor, "unconscious")) {
-        await actor.toggleCondition('unconscious')
+    if (data?.system?.attributes?.hp?.value > 0 && (data.system.attributes.hp.value + diff.damageTaken) === 0) {
+        if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
+            await actor.toggleCondition('unconscious')
+        }
     }
 });
 
