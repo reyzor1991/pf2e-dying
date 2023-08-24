@@ -2,7 +2,7 @@
   "id": "pf2e-dying",
   "title": "PF2e Dying",
   "description": "PF2e Dying.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "authors": [
     {
       "name": "Reyzor",
@@ -21,7 +21,7 @@
   "media": [],
   "compatibility": {
     "minimum": "11",
-    "verified": "11.307"
+    "verified": "11.308"
   },
   "manifest": "https://drive.usercontent.google.com/download?id=1bC8VoYF4hQu65LqXhtdl6llYjlDCHhWG",
   "download": "https://drive.usercontent.google.com/download?id=1FLcVfVqQ1fzy-xbzNhdMucDsIen15Ohn",
