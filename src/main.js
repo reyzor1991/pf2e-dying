@@ -4,14 +4,29 @@ function hasCondition(actor, con) {
     return actor?.itemTypes?.condition?.find((c => c.type === "condition" && con === c.slug))
 }
 
-function isDamageRoll(message) {
-    return message?.flags?.pf2e?.context?.type === "damage-roll";
+function criticalSuccessMessageOutcome(message) {
+    return "criticalSuccess" === message?.flags?.pf2e?.context?.outcome;
+}
+
+function criticalFailureMessageOutcome(message) {
+    return "criticalFailure" === message?.flags?.pf2e?.context?.outcome;
 }
 
 function isDamageNonLethal() {
-     const lDam = game.messages.contents.slice(-5).findLast(m=>isDamageRoll(m));
+     const lDam = game.messages.contents.slice(-5).findLast(m=>m?.flags?.pf2e?.context?.type === "damage-roll");
      if (lDam) {
         return (Number(lDam.content) > 0) && lDam?.item?.traits?.has('nonlethal')
+     }
+     return false;
+}
+
+function isDamageCrit() {
+     const lDam = game.messages.contents.slice(-10).findLast(m=>(m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack") || m?.flags?.pf2e?.context?.type === "saving-throw");
+     if (lDam) {
+        if (lDam.flags.pf2e.context.type === "damage-roll") {
+            return criticalSuccessMessageOutcome(lDam);
+        }
+        return criticalFailureMessageOutcome(lDam);
      }
      return false;
 }
@@ -62,6 +77,29 @@ Hooks.once("init", () => {
 Hooks.on('updateActor', async (actor, data, diff, id) => {
     if (data?.system?.attributes?.hp?.value > 0 && hasCondition(actor, "dying")) {
         await actor.toggleCondition('dying')
+    }
+});
+
+Hooks.on('updateActor', async (actor, data, diff, id) => {
+    if (data?.system?.attributes?.hp?.value === 0 && "npc" === actor?.type) {
+            await actor.combatant?.toggleDefeated();
+//        if (!hasCondition(actor, "dying")) {
+//            await actor.toggleCondition('dying');
+//        }
+    }
+});
+
+Hooks.on('createChatMessage', async (message) => {
+    if ('appliedDamage' in message.flags.pf2e && message.flags.pf2e.appliedDamage === null
+        && message.content?.includes("damage-taken") && message.content?.includes("0 damage")) {
+        const {actor} = message;
+        if (actor && actor.system.attributes.hp.value === 0) {
+            if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal()) {
+                return;
+            }
+            const dyingValue = actor.getCondition("dying")?.value ?? 0;
+            await actor.increaseCondition('dying',{'value': dyingValue + (isDamageCrit() ? 2 : 1) })
+        }
     }
 });
 
