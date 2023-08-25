@@ -4,6 +4,18 @@ function hasCondition(actor, con) {
     return actor?.itemTypes?.condition?.find((c => c.type === "condition" && con === c.slug))
 }
 
+function isDamageRoll(message) {
+    return message?.flags?.pf2e?.context?.type === "damage-roll";
+}
+
+function isDamageNonLethal() {
+     const lDam = game.messages.contents.slice(-5).findLast(m=>isDamageRoll(m));
+     if (lDam) {
+        return (Number(lDam.content) > 0) && lDam?.item?.traits?.has('nonlethal')
+     }
+     return false;
+}
+
 Hooks.once("init", () => {
     game.settings.register(moduleName, "addDeathCondition", {
         name: "Add dying condition at zero hp",
@@ -37,6 +49,14 @@ Hooks.once("init", () => {
         default: false,
         type: Boolean,
     });
+    game.settings.register(moduleName, "checkNonLethal", {
+        name: "Check  Non-lethal damage",
+        hint: "Non-lethal damage doesn't add dying but unconscious when set to 0 hp",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean,
+    });
 });
 
 Hooks.on('updateActor', async (actor, data, diff, id) => {
@@ -48,7 +68,13 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
 Hooks.on('updateActor', async (actor, data, diff, id) => {
     if (!game.settings.get(moduleName, "addDeathCondition")) {return;}
     if (data?.system?.attributes?.hp?.value === 0 && ["character", "familiar"].includes(actor?.type) && !hasCondition(actor, "dying")) {
-        actor.increaseCondition('dying',{'value': (actor.getCondition("wounded")?.value ?? 0) + 1})
+        if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal()) {
+            if (!hasCondition(actor, "unconscious")) {
+                await actor.increaseCondition('unconscious');
+            }
+            return;
+        }
+        await actor.increaseCondition('dying',{'value': (actor.getCondition("wounded")?.value ?? 0) + 1})
     }
 });
 
@@ -72,5 +98,5 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
 Hooks.on('deleteItem', async (item, data, diff, id) => {
     if (!game.settings.get(moduleName, "addWounded")) {return;}
     if (item.slug != 'dying'){return;}
-    item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
+    await item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
 });
