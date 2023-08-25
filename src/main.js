@@ -29,6 +29,14 @@ Hooks.once("init", () => {
         default: false,
         type: Boolean,
     });
+    game.settings.register(moduleName, "addWounded", {
+        name: "Add wounded when dying is removed",
+        hint: "Auto increase wounded condition when dying is removed",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean,
+    });
 });
 
 Hooks.on('updateActor', async (actor, data, diff, id) => {
@@ -59,4 +67,10 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
     if (item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
         await item.actor.increaseCondition('unconscious');
     }
+});
+
+Hooks.on('deleteItem', async (item, data, diff, id) => {
+    if (!game.settings.get(moduleName, "addWounded")) {return;}
+    if (item.slug != 'dying'){return;}
+    item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
 });
