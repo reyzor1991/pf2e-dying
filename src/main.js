@@ -13,15 +13,17 @@ function criticalFailureMessageOutcome(message) {
 }
 
 function isDamageNonLethal() {
-     const lDam = game.messages.contents.slice(-5).findLast(m=>m?.flags?.pf2e?.context?.type === "damage-roll");
+     const lDam = game.messages.contents.slice(-10).findLast(m=>m?.flags?.pf2e?.context?.type === "damage-roll");
      if (lDam) {
         return (Number(lDam.content) > 0) && lDam?.item?.traits?.has('nonlethal')
      }
      return false;
 }
 
-function isDamageCrit() {
-     const lDam = game.messages.contents.slice(-10).findLast(m=>(m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack") || m?.flags?.pf2e?.context?.type === "saving-throw");
+function isDamageCrit(actorId, uuid) {
+     const lDam = game.messages.contents.slice(-15).findLast(m=>
+        (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid)
+        || (m?.flags?.pf2e?.context?.type === "saving-throw" && m?.flags?.pf2e?.context?.actor === actorId));
      if (lDam) {
         if (lDam.flags.pf2e.context.type === "damage-roll") {
             return criticalSuccessMessageOutcome(lDam);
@@ -98,7 +100,7 @@ Hooks.on('createChatMessage', async (message) => {
                 return;
             }
             const dyingValue = actor.getCondition("dying")?.value ?? 0;
-            await actor.increaseCondition('dying',{'value': dyingValue + (isDamageCrit() ? 2 : 1) })
+            await actor.increaseCondition('dying',{'value': dyingValue + (isDamageCrit(actor.id, actor.uuid) ? 2 : 1) })
         }
     }
 });
