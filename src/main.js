@@ -12,8 +12,9 @@ function criticalFailureMessageOutcome(message) {
     return "criticalFailure" === message?.flags?.pf2e?.context?.outcome;
 }
 
-function isDamageNonLethal() {
-     const lDam = game.messages.contents.slice(-10).findLast(m=>m?.flags?.pf2e?.context?.type === "damage-roll");
+function isDamageNonLethal(uuid) {
+     const lDam = game.messages.contents.slice(-10)
+        .findLast(m=>m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid);
      if (lDam) {
         return (Number(lDam.content) > 0) && lDam?.item?.traits?.has('nonlethal')
      }
@@ -79,6 +80,9 @@ Hooks.once("init", () => {
 Hooks.on('updateActor', async (actor, data, diff, id) => {
     if (data?.system?.attributes?.hp?.value > 0 && hasCondition(actor, "dying")) {
         await actor.toggleCondition('dying')
+        if (hasCondition(actor, "unconscious")) {
+            await actor.decreaseCondition('unconscious');
+        }
     }
 });
 
@@ -96,7 +100,7 @@ Hooks.on('createChatMessage', async (message) => {
         && message.content?.includes("damage-taken") && message.content?.includes("0 damage")) {
         const {actor} = message;
         if (actor && actor.system.attributes.hp.value === 0) {
-            if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal()) {
+            if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
                 return;
             }
             const dyingValue = actor.getCondition("dying")?.value ?? 0;
@@ -108,7 +112,7 @@ Hooks.on('createChatMessage', async (message) => {
 Hooks.on('updateActor', async (actor, data, diff, id) => {
     if (!game.settings.get(moduleName, "addDeathCondition")) {return;}
     if (data?.system?.attributes?.hp?.value === 0 && ["character", "familiar"].includes(actor?.type) && !hasCondition(actor, "dying")) {
-        if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal()) {
+        if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
             if (!hasCondition(actor, "unconscious")) {
                 await actor.increaseCondition('unconscious');
             }
