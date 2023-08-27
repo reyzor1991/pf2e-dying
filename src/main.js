@@ -21,6 +21,12 @@ function isDamageNonLethal(uuid) {
      return false;
 }
 
+function totalDamage(actorId, uuid) {
+    return game.messages.contents.slice(-15).findLast(m=>
+        (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid)
+        || (m?.flags?.pf2e?.context?.type === "saving-throw" && m?.flags?.pf2e?.context?.actor === actorId))?.rolls?.[0]?.total ?? 0;
+}
+
 function isDamageCrit(actorId, uuid) {
      const lDam = game.messages.contents.slice(-15).findLast(m=>
         (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid)
@@ -32,6 +38,14 @@ function isDamageCrit(actorId, uuid) {
         return criticalFailureMessageOutcome(lDam);
      }
      return false;
+}
+
+async function setMaxDying(actor) {
+    await actor.increaseCondition('dying', {'value': actor.attributes.dying.max});
+    ChatMessage.create({
+        flavor: `${actor.name} is dead because of damage`,
+        speaker: ChatMessage.getSpeaker({ actor }),
+    }).then();
 }
 
 Hooks.once("init", () => {
@@ -103,8 +117,12 @@ Hooks.on('createChatMessage', async (message) => {
             if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
                 return;
             }
-            const dyingValue = actor.getCondition("dying")?.value ?? 0;
-            await actor.increaseCondition('dying',{'value': dyingValue + (isDamageCrit(actor.id, actor.uuid) ? 2 : 1) })
+            if (totalDamage(actor.id, actor.uuid) >= (actor.attributes.hp.temp + actor.attributes.hp.max*2)) {
+                setMaxDying(actor);
+            } else {
+                const dyingValue = actor.getCondition("dying")?.value ?? 0;
+                await actor.increaseCondition('dying',{'value': dyingValue + (isDamageCrit(actor.id, actor.uuid) ? 2 : 1) })
+            }
         }
     }
 });
@@ -118,7 +136,11 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
             }
             return;
         }
-        await actor.increaseCondition('dying',{'value': (actor.getCondition("wounded")?.value ?? 0) + 1})
+        if (totalDamage(actor.id, actor.uuid) >= (actor.attributes.hp.temp + actor.attributes.hp.max*2)) {
+            setMaxDying(actor);
+        } else {
+            await actor.increaseCondition('dying',{'value': (actor.getCondition("wounded")?.value ?? 0) + 1})
+        }
     }
 });
 
