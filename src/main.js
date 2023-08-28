@@ -21,16 +21,24 @@ function isDamageNonLethal(uuid) {
      return false;
 }
 
-function totalDamage(actorId, uuid) {
-    return game.messages.contents.slice(-15).findLast(m=>
-        (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid)
-        || (m?.flags?.pf2e?.context?.type === "saving-throw" && m?.flags?.pf2e?.context?.actor === actorId))?.rolls?.[0]?.total ?? 0;
+function isInstaKill(actor) {
+    const lMes = lastDamageMessage(actor);
+    if (!lMes) {return false;}
+    const totalDamage = lMes?.rolls?.[0]?.total ?? 0;
+
+    return totalDamage >= (actor.attributes.hp.temp + actor.attributes.hp.max*2)
+        || (actor.attributes.hp.value === 0 && lMes?.item?.traits?.has('death'));
 }
 
-function isDamageCrit(actorId, uuid) {
-     const lDam = game.messages.contents.slice(-15).findLast(m=>
-        (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid)
-        || (m?.flags?.pf2e?.context?.type === "saving-throw" && m?.flags?.pf2e?.context?.actor === actorId));
+function lastDamageMessage(actor) {
+    return game.messages.contents.slice(-15).findLast(m=>
+        (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === actor.uuid)
+        || (m?.flags?.pf2e?.context?.type === "saving-throw" && m?.flags?.pf2e?.context?.actor === actor.id)
+         || (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "save" ));
+}
+
+function isDamageCrit(actor) {
+     const lDam = lastDamageMessage(actor);
      if (lDam) {
         if (lDam.flags.pf2e.context.type === "damage-roll") {
             return criticalSuccessMessageOutcome(lDam);
@@ -117,11 +125,11 @@ Hooks.on('createChatMessage', async (message) => {
             if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
                 return;
             }
-            if (totalDamage(actor.id, actor.uuid) >= (actor.attributes.hp.temp + actor.attributes.hp.max*2)) {
+            if (isInstaKill(actor)) {
                 setMaxDying(actor);
             } else {
                 const dyingValue = actor.getCondition("dying")?.value ?? 0;
-                await actor.increaseCondition('dying',{'value': dyingValue + (isDamageCrit(actor.id, actor.uuid) ? 2 : 1) })
+                await actor.increaseCondition('dying',{'value': dyingValue + (isDamageCrit(actor) ? 2 : 1) })
             }
         }
     }
@@ -136,7 +144,7 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
             }
             return;
         }
-        if (totalDamage(actor.id, actor.uuid) >= (actor.attributes.hp.temp + actor.attributes.hp.max*2)) {
+        if (isInstaKill(actor)) {
             setMaxDying(actor);
         } else {
             await actor.increaseCondition('dying',{'value': (actor.getCondition("wounded")?.value ?? 0) + 1})
