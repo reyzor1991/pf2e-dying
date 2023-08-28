@@ -2,7 +2,7 @@
   "id": "pf2e-dying",
   "title": "PF2e Dying",
   "description": "PF2e Dying.",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "authors": [
     {
       "name": "Reyzor",
@@ -14,10 +14,21 @@
   "esmodules": [
     "pf2e-dying.js"
   ],
-  "styles": [
+  "packs": [
+    {
+      "label": "PF2e Dying Macros",
+      "name": "pf2e-dying-macros",
+      "path": "packs/pf2e-dying-macros.db",
+      "system": "pf2e",
+      "private": false,
+      "type": "Macro",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    }
   ],
-  "packFolders": [],
-  "packs": [],
   "media": [],
   "compatibility": {
     "minimum": "11",
@@ -33,7 +44,7 @@
         "manifest": "https://github.com/foundryvtt/pf2e/releases/latest/download/system.json",
         "compatibility": {
           "minimum": "5.0.2",
-          "verified": "5.3.1"
+          "verified": "5.3.2"
         }
       }
     ],

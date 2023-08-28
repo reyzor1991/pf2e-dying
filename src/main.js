@@ -56,6 +56,24 @@ async function setMaxDying(actor) {
     }).then();
 }
 
+async function heroicRecovery(actor) {
+    const dying = hasCondition(actor, "dying");
+    if (!dying) {
+        ui.notifications.info("Need to have Dying condition"); return;
+        return;
+    }
+    if (actor.system.resources.heroPoints.value === 0) {
+        ui.notifications.info("Need to have at least 1 Hero Point"); return;
+        return;
+    }
+    await actor.update({ "system.resources.heroPoints.value": 0 });
+
+    await dying.setFlag(moduleName, "heroicRecovery", true);
+    await dying.delete();
+
+    ui.notifications.info("Hero was recovered!");
+}
+
 Hooks.once("init", () => {
     game.settings.register(moduleName, "addDeathCondition", {
         name: "Add dying condition at zero hp",
@@ -97,6 +115,10 @@ Hooks.once("init", () => {
         default: false,
         type: Boolean,
     });
+
+    game.pf2eDying = mergeObject(game.pf2eDying ?? {}, {
+        "heroicRecovery": heroicRecovery,
+    })
 });
 
 Hooks.on('updateActor', async (actor, data, diff, id) => {
@@ -172,5 +194,6 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
 Hooks.on('deleteItem', async (item, data, diff, id) => {
     if (!game.settings.get(moduleName, "addWounded")) {return;}
     if (item.slug != 'dying'){return;}
+    if (item.getFlag(moduleName, "heroicRecovery")) {return;}
     await item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
 });

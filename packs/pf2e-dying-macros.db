@@ -1,0 +1,1 @@
+{ "_id": "tWEje2dZEW6kltdb", "author": "E9zWf1a6ounUt7Ro", "command": "game.pf2eDying.heroicRecovery(actor);", "img": "systems/pf2e/icons/features/feats/heroic-recovery.webp", "name": "Heroic Recovery", "ownership": { "default": 1 }, "scope": "global", "type": "script" }
