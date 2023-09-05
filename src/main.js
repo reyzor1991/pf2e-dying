@@ -121,24 +121,6 @@ Hooks.once("init", () => {
     })
 });
 
-Hooks.on('updateActor', async (actor, data, diff, id) => {
-    if (data?.system?.attributes?.hp?.value > 0 && hasCondition(actor, "dying")) {
-        await actor.toggleCondition('dying')
-        if (hasCondition(actor, "unconscious")) {
-            await actor.decreaseCondition('unconscious');
-        }
-    }
-});
-
-Hooks.on('updateActor', async (actor, data, diff, id) => {
-    if (data?.system?.attributes?.hp?.value === 0 && "npc" === actor?.type) {
-            await actor.combatant?.toggleDefeated();
-//        if (!hasCondition(actor, "dying")) {
-//            await actor.toggleCondition('dying');
-//        }
-    }
-});
-
 Hooks.on('createChatMessage', async (message) => {
     if ('appliedDamage' in message.flags.pf2e && message.flags.pf2e.appliedDamage === null
         && message.content?.includes("damage-taken") && message.content?.includes("0 damage")) {
@@ -158,42 +140,50 @@ Hooks.on('createChatMessage', async (message) => {
 });
 
 Hooks.on('updateActor', async (actor, data, diff, id) => {
-    if (!game.settings.get(moduleName, "addDeathCondition")) {return;}
-    if (data?.system?.attributes?.hp?.value === 0 && ["character", "familiar"].includes(actor?.type) && !hasCondition(actor, "dying")) {
-        if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
-            if (!hasCondition(actor, "unconscious")) {
-                await actor.increaseCondition('unconscious');
+    if (data?.system?.attributes?.hp?.value === 0 && "npc" === actor?.type) {
+        await actor.combatant?.toggleDefeated();
+    }
+
+    if (data?.system?.attributes?.hp?.value > 0 && hasCondition(actor, "dying")) {
+        await actor.decreaseCondition('dying', {forceRemove:true})
+        if (hasCondition(actor, "unconscious")) {
+            await actor.decreaseCondition('unconscious');
+        }
+    }
+
+    if (game.settings.get(moduleName, "removeUnconsciousWhenHeal")) {
+        if (data?.system?.attributes?.hp?.value > 0 && (data.system.attributes.hp.value + diff.damageTaken) === 0) {
+            if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
+                console.log('removeUnconsciousWhenHeal')
+                await actor.decreaseCondition('unconscious')
             }
-            return;
-        }
-        if (isInstaKill(actor)) {
-            setMaxDying(actor);
-        } else {
-            await actor.increaseCondition('dying',{'value': (actor.getCondition("wounded")?.value ?? 0) + 1})
         }
     }
-});
 
-Hooks.on('updateActor', async (actor, data, diff, id) => {
-    if (!game.settings.get(moduleName, "removeUnconsciousWhenHeal")) {return;}
-    if (data?.system?.attributes?.hp?.value > 0 && (data.system.attributes.hp.value + diff.damageTaken) === 0) {
-        if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
-            await actor.toggleCondition('unconscious')
+    if (game.settings.get(moduleName, "addDeathCondition")) {
+        if (data?.system?.attributes?.hp?.value === 0 && ["character", "familiar"].includes(actor?.type) && !hasCondition(actor, "dying") && !actor.traits.has('eidolon')) {
+            if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
+                if (!hasCondition(actor, "unconscious")) {
+                    await actor.increaseCondition('unconscious');
+                }
+                return;
+            }
+            if (isInstaKill(actor)) {
+                setMaxDying(actor);
+            } else {
+                await actor.increaseCondition('dying',{'value': (actor.getCondition("wounded")?.value ?? 0) + 1})
+            }
         }
-    }
-});
-
-Hooks.on('deleteItem', async (item, data, diff, id) => {
-    if (!game.settings.get(moduleName, "addUnconsciousZeroHP")) {return;}
-    if (item.slug != 'dying'){return;}
-    if (item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
-        await item.actor.increaseCondition('unconscious');
     }
 });
 
 Hooks.on('deleteItem', async (item, data, diff, id) => {
-    if (!game.settings.get(moduleName, "addWounded")) {return;}
-    if (item.slug != 'dying'){return;}
-    if (item.getFlag(moduleName, "heroicRecovery")) {return;}
-    await item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
+    if (game.settings.get(moduleName, "addUnconsciousZeroHP") && item.slug === 'dying') {
+        if (item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
+            await item.actor.increaseCondition('unconscious');
+        }
+    }
+    if (game.settings.get(moduleName, "addWounded") && item.slug === 'dying' && item.getFlag(moduleName, "heroicRecovery")) {
+        await item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
+    }
 });
