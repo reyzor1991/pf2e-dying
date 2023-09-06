@@ -183,7 +183,7 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
             await item.actor.increaseCondition('unconscious');
         }
     }
-    if (game.settings.get(moduleName, "addWounded") && item.slug === 'dying' && item.getFlag(moduleName, "heroicRecovery")) {
+    if (game.settings.get(moduleName, "addWounded") && item.slug === 'dying' && !item.getFlag(moduleName, "heroicRecovery")) {
         await item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
     }
 });
