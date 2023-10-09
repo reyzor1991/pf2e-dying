@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.0.11
+
+### New feature
+- Fix permissions
+
 ## Version 0.0.10
 
 ### New feature
