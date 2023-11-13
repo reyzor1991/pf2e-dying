@@ -48,10 +48,10 @@ function isDamageCrit(actor) {
      return false;
 }
 
-async function setMaxDying(actor) {
+async function setMaxDying(actor, isMax=false) {
     await actor.increaseCondition('dying', {'value': actor.attributes.dying.max});
     ChatMessage.create({
-        flavor: `${actor.name} is dead because of damage`,
+        flavor: isMax ? `${actor.name} is dead because of max dying condition` : `${actor.name} is dead because of damage`,
         speaker: ChatMessage.getSpeaker({ actor }),
     }).then();
 }
@@ -134,7 +134,15 @@ Hooks.on('createChatMessage', async (message) => {
                 setMaxDying(actor);
             } else {
                 const dyingValue = actor.getCondition("dying")?.value ?? 0;
-                await actor.increaseCondition('dying',{'value': dyingValue + (isDamageCrit(actor) ? 2 : 1) })
+                let val = dyingValue + (isDamageCrit(actor) ? 2 : 1);
+                if (val > actor.attributes.dying.max) {
+                    val = actor.attributes.dying.max;
+                }
+                if (val === actor.attributes.dying.max) {
+                    setMaxDying(actor, true);
+                    return
+                }
+                await actor.increaseCondition('dying',{'value':  val})
             }
         }
     }
@@ -144,6 +152,7 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
     if (!game.user.isGM) {return}
     if (data?.system?.attributes?.hp?.value === 0 && "npc" === actor?.type) {
         await actor.combatant?.toggleDefeated();
+        return
     }
 
     if (data?.system?.attributes?.hp?.value > 0 && hasCondition(actor, "dying")) {
@@ -172,7 +181,15 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
             if (isInstaKill(actor)) {
                 setMaxDying(actor);
             } else {
-                await actor.increaseCondition('dying',{'value': (actor.getCondition("wounded")?.value ?? 0) + 1})
+                let val = (actor.getCondition("wounded")?.value ?? 0) + (isDamageCrit(actor) ? 2 : 1);
+                if (val > actor.attributes.dying.max) {
+                    val = actor.attributes.dying.max;
+                }
+                if (val === actor.attributes.dying.max) {
+                    setMaxDying(actor, true);
+                    return
+                }
+                await actor.increaseCondition('dying',{'value': val})
             }
         }
     }
