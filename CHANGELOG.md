@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.13
+- Rotate token
+
 ## Version 0.0.12
 - Message when about max dying
 

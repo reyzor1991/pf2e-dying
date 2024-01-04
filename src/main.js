@@ -74,6 +74,15 @@ async function heroicRecovery(actor) {
     ui.notifications.info("Hero was recovered!");
 }
 
+function rotateActor(actor, isDead=true) {
+    if (!game.settings.get(moduleName, "rotate")) { return }
+    let tokens = actor.getActiveTokens(true, false)
+
+    for (const t of tokens) {
+        t.rotate(isDead ? -90 : 0)
+    }
+}
+
 Hooks.once("init", () => {
     game.settings.register(moduleName, "addDeathCondition", {
         name: "Add dying condition at zero hp",
@@ -110,6 +119,13 @@ Hooks.once("init", () => {
     game.settings.register(moduleName, "checkNonLethal", {
         name: "Check  Non-lethal damage",
         hint: "Non-lethal damage doesn't add dying but unconscious when set to 0 hp",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean,
+    });
+    game.settings.register(moduleName, "rotate", {
+        name: "Rotate Token when has Dying Unconscious",
         scope: "world",
         config: true,
         default: false,
@@ -205,4 +221,15 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
     if (game.settings.get(moduleName, "addWounded") && item.slug === 'dying' && !item.getFlag(moduleName, "heroicRecovery")) {
         await item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
     }
+
+    if (item.slug === 'unconscious') {
+        rotateActor(item.actor, false)
+    }
+});
+
+Hooks.on('createItem', (item, data, diff, id) => {
+    if (!game.user.isGM) {return}
+    if (!item.actor) {return}
+    if (!(item.slug === 'unconscious')) { return }
+    rotateActor(item.actor)
 });
