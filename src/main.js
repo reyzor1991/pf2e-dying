@@ -83,6 +83,23 @@ function rotateActor(actor, isDead=true) {
     }
 }
 
+async function changeInitiative(combatant) {
+    if (!combatant) { return }
+    if (!game.combat) { return }
+    if (!game.settings.get(moduleName, "move")) { return }
+    if (game.combat?.combatant === combatant) { return }
+
+    let current = game.combat.combatant.initiative
+
+    let previous = game.combat.combatants
+        .map(c => c.initiative || 0)
+        .sort((a, b) => a - b)
+        .find(i => i > current )
+
+    const initiative = !previous || previous < current ? current + 1 : (previous + current) / 2;
+    game.combat.setInitiative(combatant.id, initiative)
+}
+
 Hooks.once("init", () => {
     game.settings.register(moduleName, "addDeathCondition", {
         name: "Add dying condition at zero hp",
@@ -124,6 +141,13 @@ Hooks.once("init", () => {
         default: false,
         type: Boolean,
     });
+    game.settings.register(moduleName, "move", {
+        name: "Change initiative when get dying condition",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean,
+    });
     game.settings.register(moduleName, "rotate", {
         name: "Rotate Token when has Dying Unconscious",
         scope: "world",
@@ -139,8 +163,10 @@ Hooks.once("init", () => {
 
 Hooks.on('createChatMessage', async (message) => {
     if (!game.user.isGM) {return}
-    if ('appliedDamage' in message.flags.pf2e && message.flags.pf2e.appliedDamage === null
-        && message.content?.includes("damage-taken") && message.content?.includes("0 damage")) {
+    if ('appliedDamage' in message.flags.pf2e && !message.flags.pf2e.appliedDamage.isHealing
+        && message.content?.includes("damage-taken") && message.content.match(/takes (?![0]\b)\d{1,4} damage/)
+        && message.flags.pf2e.appliedDamage.updates.length === 0
+    ) {
         const {actor} = message;
         if (actor && actor.system.attributes.hp.value === 0) {
             if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
@@ -150,11 +176,8 @@ Hooks.on('createChatMessage', async (message) => {
                 setMaxDying(actor);
             } else {
                 const dyingValue = actor.getCondition("dying")?.value ?? 0;
-                let val = dyingValue + (isDamageCrit(actor) ? 2 : 1);
-                if (val > actor.attributes.dying.max) {
-                    val = actor.attributes.dying.max;
-                }
-                if (val === actor.attributes.dying.max) {
+                let val = (isDamageCrit(actor) ? 2 : 1);
+                if ((dyingValue + val) >= actor.attributes.dying.max) {
                     setMaxDying(actor, true);
                     return
                 }
@@ -168,6 +191,7 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
     if (!game.user.isGM) {return}
     if (data?.system?.attributes?.hp?.value === 0 && "npc" === actor?.type) {
         await actor.combatant?.toggleDefeated();
+        await changeInitiative(actor.combatant);
         return
     }
 
@@ -192,6 +216,7 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
                 if (!hasCondition(actor, "unconscious")) {
                     await actor.increaseCondition('unconscious');
                 }
+                await changeInitiative(actor.combatant);
                 return;
             }
             if (isInstaKill(actor)) {
@@ -203,10 +228,11 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
                 }
                 if (val === actor.attributes.dying.max) {
                     setMaxDying(actor, true);
-                    return
+                } else {
+                    await actor.increaseCondition('dying',{'value': val})
                 }
-                await actor.increaseCondition('dying',{'value': val})
             }
+            await changeInitiative(actor.combatant);
         }
     }
 });
@@ -219,7 +245,7 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
         }
     }
     if (game.settings.get(moduleName, "addWounded") && item.slug === 'dying' && !item.getFlag(moduleName, "heroicRecovery")) {
-        await item.actor.increaseCondition('wounded',{'value': (item.actor.getCondition("wounded")?.value ?? 0) + 1})
+        await item.actor.increaseCondition('wounded')
     }
 
     if (item.slug === 'unconscious') {

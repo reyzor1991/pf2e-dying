@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.14
+- Return logic about change initiative order when dying
+
 ## Version 0.0.13
 - Rotate token
 
