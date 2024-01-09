@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.15
+- Preparation for Ghoul Fever affliction
+
 ## Version 0.0.14
 - Return logic about change initiative order when dying
 

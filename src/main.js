@@ -163,7 +163,7 @@ Hooks.once("init", () => {
 
 Hooks.on('createChatMessage', async (message) => {
     if (!game.user.isGM) {return}
-    if ('appliedDamage' in message.flags.pf2e && !message.flags.pf2e.appliedDamage.isHealing
+    if ('appliedDamage' in message.flags.pf2e && message.flags.pf2e.appliedDamage && !message.flags.pf2e.appliedDamage.isHealing
         && message.content?.includes("damage-taken") && message.content.match(/takes (?![0]\b)\d{1,4} damage/)
         && message.flags.pf2e.appliedDamage.updates.length === 0
     ) {
