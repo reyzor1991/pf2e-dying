@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.16
+- Move to dropbox
+
 ## Version 0.0.15
 - Preparation for Ghoul Fever affliction
 
