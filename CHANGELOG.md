@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.17
+- Change login of rotation token, need to update settings
+
 ## Version 0.0.16
 - Move to dropbox
 

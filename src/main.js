@@ -74,15 +74,6 @@ async function heroicRecovery(actor) {
     ui.notifications.info("Hero was recovered!");
 }
 
-function rotateActor(actor, isDead=true) {
-    if (!game.settings.get(moduleName, "rotate")) { return }
-    let tokens = actor.getActiveTokens(true, false)
-
-    for (const t of tokens) {
-        t.rotate(isDead ? -90 : 0)
-    }
-}
-
 async function changeInitiative(combatant) {
     if (!combatant) { return }
     if (!game.combat) { return }
@@ -148,12 +139,18 @@ Hooks.once("init", () => {
         default: false,
         type: Boolean,
     });
-    game.settings.register(moduleName, "rotate", {
-        name: "Rotate Token when has Dying Unconscious",
+    game.settings.register(moduleName, "rotateState", {
+        name: "Rotate Token when has condition",
         scope: "world",
         config: true,
         default: false,
-        type: Boolean,
+        type: String,
+        choices: {
+            no: 'No Rotate',
+            unconscious: 'Unconscious',
+            unconsciousProne: 'Unconscious or Prone',
+        },
+        default: "no",
     });
 
     game.pf2eDying = mergeObject(game.pf2eDying ?? {}, {
@@ -248,14 +245,34 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
         await item.actor.increaseCondition('wounded')
     }
 
-    if (item.slug === 'unconscious') {
-        rotateActor(item.actor, false)
+    if (['unconscious', 'prone'].includes(item.slug)) {
+        await rotateActor(item.actor)
     }
 });
 
-Hooks.on('createItem', (item, data, diff, id) => {
-    if (!game.user.isGM) {return}
-    if (!item.actor) {return}
-    if (!(item.slug === 'unconscious')) { return }
-    rotateActor(item.actor)
+Hooks.on('createItem', async (item, data, diff, id) => {
+    if (!game.user.isGM || !item.actor) {return}
+    if (!['unconscious', 'prone'].includes(item.slug)) { return }
+    await rotateActor(item.actor)
 });
+
+async function rotateActor(actor) {
+    if (game.settings.get(moduleName, "rotateState") === 'no') {return}
+    let tokens = actor.getActiveTokens(true, false)
+
+    if (game.settings.get(moduleName, "rotateState") === 'unconscious') {
+        if (hasCondition(actor, "unconscious")) {
+            for (const t of tokens) { await t.rotate(-90) }
+        } else {
+            for (const t of tokens) { await t.rotate(0) }
+        }
+    } else if (game.settings.get(moduleName, "rotateState") === 'unconsciousProne') {
+        if (hasCondition(actor, "unconscious")) {
+            for (const t of tokens) { await t.rotate(-90) }
+        } else if (hasCondition(actor, "prone")) {
+            for (const t of tokens) { await t.rotate(-90) }
+        } else {
+            for (const t of tokens) { await t.rotate(0) }
+        }
+    }
+};
