@@ -153,7 +153,7 @@ Hooks.once("init", () => {
         default: "no",
     });
 
-    game.pf2eDying = mergeObject(game.pf2eDying ?? {}, {
+    game.pf2eDying = foundry.utils.mergeObject(game.pf2eDying ?? {}, {
         "heroicRecovery": heroicRecovery,
     })
 });

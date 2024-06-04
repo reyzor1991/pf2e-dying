@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.0.18
+- Fix warning v12
+
 ## Version 0.0.17
 - Change login of rotation token, need to update settings
 
