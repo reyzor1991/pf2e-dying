@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.1.0
+- v12 compatibility
+
 ## Version 0.0.18
 - Fix warning v12
 
