@@ -186,9 +186,8 @@ Hooks.on('createChatMessage', async (message) => {
 
 Hooks.on('updateActor', async (actor, data, diff, id) => {
     if (!game.user.isGM) {return}
-    if (data?.system?.attributes?.hp?.value === 0 && "npc" === actor?.type) {
-        await actor.combatant?.toggleDefeated();
-        await changeInitiative(actor.combatant);
+    if (data?.system?.attributes?.hp?.value === 0 && actor?.isOfType('npc')) {
+        toggleActorDead(actor)
         return
     }
 
@@ -213,7 +212,7 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
                 if (!hasCondition(actor, "unconscious")) {
                     await actor.increaseCondition('unconscious');
                 }
-                await changeInitiative(actor.combatant);
+                await toggleActorDead(actor)
                 return;
             }
             if (isInstaKill(actor)) {
@@ -229,10 +228,34 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
                     await actor.increaseCondition('dying',{'value': val})
                 }
             }
-            await changeInitiative(actor.combatant);
+            await toggleActorDead(actor)
         }
     }
 });
+
+async function toggleActorDead(actor) {
+    if (actor.prototypeToken.actorLink) {
+        await toggleLinkedActorDead(actor)
+    } else if (actor.combatant) {
+        await actor.combatant.toggleDefeated();
+    } else {
+        await actor.toggleStatusEffect("dead", {overlay: true});
+    }
+
+    if (actor.combatant) {
+        await changeInitiative(actor.combatant);
+    }
+}
+
+async function toggleLinkedActorDead(actor) {
+    let effect = await ActiveEffect.implementation.fromStatusEffect("dead");
+    effect.img = 'icons/svg/unconscious.svg'
+    effect._source.img =  'icons/svg/unconscious.svg'
+    effect.updateSource({"flags.core.overlay": true})
+
+    ActiveEffect.implementation.create(effect, {parent: actor, keepId: true});
+}
+
 
 Hooks.on('deleteItem', async (item, data, diff, id) => {
     if (!game.user.isGM) {return}

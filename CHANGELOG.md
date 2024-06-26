@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.1.1
+- Add icons to dead actors
+
 ## Version 0.1.0
 - v12 compatibility
 
