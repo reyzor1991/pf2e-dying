@@ -2,7 +2,7 @@
   "id": "pf2e-dying",
   "title": "PF2e Dying",
   "description": "PF2e Dying.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "authors": [
     {
       "name": "Reyzor",
@@ -34,7 +34,7 @@
     "minimum": "11",
     "verified": "12.327"
   },
-  "url": "https://www.patreon.com/Reyzor1991",
+  "url": "https://github.com/reyzor1991/pf2e-wiki/wiki/PF2e-Dying",
   "manifest": "https://www.dropbox.com/scl/fi/v1c8irfqt8xslcc5r22l5/module.json?rlkey=w5mowxk9cx2zojipy9otq2otf&dl=1",
   "download": "https://www.dropbox.com/scl/fi/lolhgdvqd8ifkesjp3z6l/pf2e-dying.zip?rlkey=lospxujrezvf0gz0vzmp4lxfy&dl=1",
   "changelog": "https://www.dropbox.com/scl/fi/u2pgmu6xec62zy1axf1mv/CHANGELOG.md?rlkey=fj9961tmt97xs7fk1rup2wwke&dl=1",
