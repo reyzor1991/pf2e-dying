@@ -159,7 +159,7 @@ Hooks.once("init", () => {
 });
 
 Hooks.on('createChatMessage', async (message) => {
-    if (!game.user.isGM) {return}
+    if (!isGM()) {return}
     if ('appliedDamage' in message.flags.pf2e && message.flags.pf2e.appliedDamage && !message.flags.pf2e.appliedDamage.isHealing
         && message.content?.includes("damage-taken") && message.content.match(/takes (?![0]\b)\d{1,4} damage/)
         && message.flags.pf2e.appliedDamage.updates.length === 0
@@ -185,7 +185,7 @@ Hooks.on('createChatMessage', async (message) => {
 });
 
 Hooks.on('updateActor', async (actor, data, diff, id) => {
-    if (!game.user.isGM) {return}
+    if (!isGM()) {return}
     if (data?.system?.attributes?.hp?.value === 0 && actor?.isOfType('npc')) {
         toggleActorDead(actor)
         return
@@ -258,7 +258,7 @@ async function toggleLinkedActorDead(actor) {
 
 
 Hooks.on('deleteItem', async (item, data, diff, id) => {
-    if (!game.user.isGM) {return}
+    if (!isGM()) {return}
     if (game.settings.get(moduleName, "addUnconsciousZeroHP") && item.slug === 'dying') {
         if (item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
             await item.actor.increaseCondition('unconscious');
@@ -274,10 +274,14 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
 });
 
 Hooks.on('createItem', async (item, data, diff, id) => {
-    if (!game.user.isGM || !item.actor) {return}
+    if (!isGM() || !item.actor) {return}
     if (!['unconscious', 'prone'].includes(item.slug)) { return }
     await rotateActor(item.actor)
 });
+
+function isGM() {
+    return game.user.isGM && game.user == game.users.activeGM;
+}
 
 async function rotateActor(actor) {
     if (game.settings.get(moduleName, "rotateState") === 'no') {return}
