@@ -13,60 +13,62 @@ function criticalFailureMessageOutcome(message) {
 }
 
 function isDamageNonLethal(uuid) {
-     const lDam = game.messages.contents.slice(-10)
-        .findLast(m=>m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid);
-     if (lDam) {
+    const lDam = game.messages.contents.slice(-10)
+        .findLast(m => m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid);
+    if (lDam) {
         return (Number(lDam.content) > 0) && lDam?.item?.traits?.has('nonlethal')
-     }
-     return false;
+    }
+    return false;
 }
 
 function isInstaKill(actor) {
     const lMes = lastDamageMessage(actor);
-    if (!lMes) {return false;}
+    if (!lMes) {
+        return false;
+    }
     const totalDamage = lMes?.rolls?.[0]?.total ?? 0;
 
-    return totalDamage >= (actor.attributes.hp.temp + actor.attributes.hp.max*2)
+    return totalDamage >= (actor.attributes.hp.temp + actor.attributes.hp.max * 2)
         || (actor.attributes.hp.value === 0 && lMes?.item?.traits?.has('death'));
 }
 
 function lastDamageMessage(actor) {
-    return game.messages.contents.slice(-15).findLast(m=>
+    return game.messages.contents.slice(-15).findLast(m =>
         (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === actor.uuid)
         || (m?.flags?.pf2e?.context?.type === "saving-throw" && m?.flags?.pf2e?.context?.actor === actor.id)
-         || (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "save" ));
+        || (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "save"));
 }
 
 function isDamageCrit(actor) {
-     const lDam = lastDamageMessage(actor);
-     if (lDam) {
+    const lDam = lastDamageMessage(actor);
+    if (lDam) {
         if (lDam.flags.pf2e.context.type === "damage-roll") {
             return criticalSuccessMessageOutcome(lDam);
         }
         return criticalFailureMessageOutcome(lDam);
-     }
-     return false;
+    }
+    return false;
 }
 
-async function setMaxDying(actor, isMax=false) {
+async function setMaxDying(actor, isMax = false) {
     await actor.increaseCondition('dying', {'value': actor.attributes.dying.max});
     ChatMessage.create({
         flavor: isMax ? `${actor.name} is dead because of max dying condition` : `${actor.name} is dead because of damage`,
-        speaker: ChatMessage.getSpeaker({ actor }),
+        speaker: ChatMessage.getSpeaker({actor}),
     }).then();
 }
 
 async function heroicRecovery(actor) {
     const dying = hasCondition(actor, "dying");
     if (!dying) {
-        ui.notifications.info("Need to have Dying condition"); return;
+        ui.notifications.info("Need to have Dying condition");
         return;
     }
     if (actor.system.resources.heroPoints.value === 0) {
-        ui.notifications.info("Need to have at least 1 Hero Point"); return;
+        ui.notifications.info("Need to have at least 1 Hero Point");
         return;
     }
-    await actor.update({ "system.resources.heroPoints.value": 0 });
+    await actor.update({"system.resources.heroPoints.value": 0});
 
     await dying.setFlag(moduleName, "heroicRecovery", true);
     await dying.delete();
@@ -75,17 +77,25 @@ async function heroicRecovery(actor) {
 }
 
 async function changeInitiative(combatant) {
-    if (!combatant) { return }
-    if (!game.combat) { return }
-    if (!game.settings.get(moduleName, "move")) { return }
-    if (game.combat?.combatant === combatant) { return }
+    if (!combatant) {
+        return
+    }
+    if (!game.combat) {
+        return
+    }
+    if (!game.settings.get(moduleName, "move")) {
+        return
+    }
+    if (game.combat?.combatant === combatant) {
+        return
+    }
 
     let current = game.combat.combatant.initiative
 
     let previous = game.combat.combatants
         .map(c => c.initiative || 0)
         .sort((a, b) => a - b)
-        .find(i => i > current )
+        .find(i => i > current)
 
     const initiative = !previous || previous < current ? current + 1 : (previous + current) / 2;
     game.combat.setInitiative(combatant.id, initiative)
@@ -143,7 +153,6 @@ Hooks.once("init", () => {
         name: "Rotate Token when has condition",
         scope: "world",
         config: true,
-        default: false,
         type: String,
         choices: {
             no: 'No Rotate',
@@ -156,10 +165,19 @@ Hooks.once("init", () => {
     game.pf2eDying = foundry.utils.mergeObject(game.pf2eDying ?? {}, {
         "heroicRecovery": heroicRecovery,
     })
+
+    let origin = CONFIG.ActiveEffect.documentClass.prototype._preCreate;
+    CONFIG.ActiveEffect.documentClass.prototype._preCreate = async (data, operation, user) => {
+        return data.statuses.includes("dead") || data.statuses.includes("unconscious")
+            ? true
+            : origin.call(this, data, operation, user)
+    }
 });
 
 Hooks.on('createChatMessage', async (message) => {
-    if (!isGM()) {return}
+    if (!isGM()) {
+        return
+    }
     if ('appliedDamage' in message.flags.pf2e && message.flags.pf2e.appliedDamage && !message.flags.pf2e.appliedDamage.isHealing
         && message.content?.includes("damage-taken") && message.content.match(/takes (?![0]\b)\d{1,4} damage/)
         && message.flags.pf2e.appliedDamage.updates.length === 0
@@ -170,6 +188,7 @@ Hooks.on('createChatMessage', async (message) => {
                 return;
             }
             if (isInstaKill(actor)) {
+                n
                 setMaxDying(actor);
             } else {
                 const dyingValue = actor.getCondition("dying")?.value ?? 0;
@@ -178,24 +197,27 @@ Hooks.on('createChatMessage', async (message) => {
                     setMaxDying(actor, true);
                     return
                 }
-                await actor.increaseCondition('dying',{'value':  val})
+                await actor.increaseCondition('dying', {'value': val})
             }
         }
     }
 });
 
 Hooks.on('updateActor', async (actor, data, diff, id) => {
-    if (!isGM()) {return}
+    if (!isGM()) {
+        return
+    }
     if (data?.system?.attributes?.hp?.value === 0 && actor?.isOfType('npc')) {
         toggleActorDead(actor)
         return
     }
 
     if (data?.system?.attributes?.hp?.value > 0 && hasCondition(actor, "dying")) {
-        await actor.decreaseCondition('dying', {forceRemove:true})
+        await actor.decreaseCondition('dying', {forceRemove: true})
         if (hasCondition(actor, "unconscious")) {
             await actor.decreaseCondition('unconscious');
         }
+        await actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
     }
 
     if (game.settings.get(moduleName, "removeUnconsciousWhenHeal")) {
@@ -225,7 +247,7 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
                 if (val === actor.attributes.dying.max) {
                     setMaxDying(actor, true);
                 } else {
-                    await actor.increaseCondition('dying',{'value': val})
+                    await actor.increaseCondition('dying', {'value': val})
                 }
             }
             await toggleActorDead(actor)
@@ -248,7 +270,7 @@ async function toggleActorDead(actor) {
 }
 
 async function toggleLinkedActorDead(actor) {
-    let effect = await ActiveEffect.implementation.fromStatusEffect("dead");
+    let effect = await ActiveEffect.implementation.fromStatusEffect("unconscious");
     effect.img = 'icons/svg/unconscious.svg'
     effect._source.img =  'icons/svg/unconscious.svg'
     effect.updateSource({"flags.core.overlay": true})
@@ -256,9 +278,10 @@ async function toggleLinkedActorDead(actor) {
     ActiveEffect.implementation.create(effect, {parent: actor, keepId: true});
 }
 
-
 Hooks.on('deleteItem', async (item, data, diff, id) => {
-    if (!isGM()) {return}
+    if (!isGM()) {
+        return
+    }
     if (game.settings.get(moduleName, "addUnconsciousZeroHP") && item.slug === 'dying') {
         if (item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
             await item.actor.increaseCondition('unconscious');
@@ -274,32 +297,48 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
 });
 
 Hooks.on('createItem', async (item, data, diff, id) => {
-    if (!isGM() || !item.actor) {return}
-    if (!['unconscious', 'prone'].includes(item.slug)) { return }
+    if (!isGM() || !item.actor) {
+        return
+    }
+    if (!['unconscious', 'prone'].includes(item.slug)) {
+        return
+    }
     await rotateActor(item.actor)
 });
 
 function isGM() {
-    return game.user.isGM && game.user == game.users.activeGM;
+    return game.user.isGM && game.user === game.users.activeGM;
 }
 
 async function rotateActor(actor) {
-    if (game.settings.get(moduleName, "rotateState") === 'no') {return}
+    if (game.settings.get(moduleName, "rotateState") === 'no') {
+        return
+    }
     let tokens = actor.getActiveTokens(true, false)
 
     if (game.settings.get(moduleName, "rotateState") === 'unconscious') {
         if (hasCondition(actor, "unconscious")) {
-            for (const t of tokens) { await t.rotate(-90) }
+            for (const t of tokens) {
+                await t.rotate(-90)
+            }
         } else {
-            for (const t of tokens) { await t.rotate(0) }
+            for (const t of tokens) {
+                await t.rotate(0)
+            }
         }
     } else if (game.settings.get(moduleName, "rotateState") === 'unconsciousProne') {
         if (hasCondition(actor, "unconscious")) {
-            for (const t of tokens) { await t.rotate(-90) }
+            for (const t of tokens) {
+                await t.rotate(-90)
+            }
         } else if (hasCondition(actor, "prone")) {
-            for (const t of tokens) { await t.rotate(-90) }
+            for (const t of tokens) {
+                await t.rotate(-90)
+            }
         } else {
-            for (const t of tokens) { await t.rotate(0) }
+            for (const t of tokens) {
+                await t.rotate(0)
+            }
         }
     }
-};
+}

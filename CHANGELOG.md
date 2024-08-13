@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.1.2-4
+- Fix unconscious
+
 ## Version 0.1.1
 - Add icons to dead actors
 
