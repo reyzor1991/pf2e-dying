@@ -224,6 +224,7 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
         if (data?.system?.attributes?.hp?.value > 0 && (data.system.attributes.hp.value + diff.damageTaken) === 0) {
             if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
                 await actor.decreaseCondition('unconscious')
+                await actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
             }
         }
     }
@@ -270,6 +271,7 @@ async function toggleActorDead(actor) {
 }
 
 async function toggleLinkedActorDead(actor) {
+    if (actor.effects.find(a=>a.statuses.has('unconscious'))) {return}
     let effect = await ActiveEffect.implementation.fromStatusEffect("unconscious");
     effect.img = 'icons/svg/unconscious.svg'
     effect._source.img =  'icons/svg/unconscious.svg'
