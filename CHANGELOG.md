@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.0
+- Delete unneeded conditions
+
 ## Version 0.1.2-4
 - Fix unconscious
 

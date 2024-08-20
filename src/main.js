@@ -102,38 +102,38 @@ async function changeInitiative(combatant) {
 }
 
 Hooks.once("init", () => {
-    game.settings.register(moduleName, "addDeathCondition", {
-        name: "Add dying condition at zero hp",
-        hint: "Add dying condition (for PC + familiar)",
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
-    game.settings.register(moduleName, "addUnconsciousZeroHP", {
-        name: "Add unconscious condition at zero hp",
-        hint: "Auto add unconscious if dying is removed but still at zero hp (for all actor)",
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
-    game.settings.register(moduleName, "removeUnconsciousWhenHeal", {
-        name: "Remove unconscious when actor is healed",
-        hint: "Auto remove unconscious if healed above 0 hp (for all actor)",
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
-    game.settings.register(moduleName, "addWounded", {
-        name: "Add wounded when dying is removed",
-        hint: "Auto increase wounded condition when dying is removed",
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
+    // game.settings.register(moduleName, "addDeathCondition", {
+    //     name: "Add dying condition at zero hp",
+    //     hint: "Add dying condition (for PC + familiar)",
+    //     scope: "world",
+    //     config: true,
+    //     default: false,
+    //     type: Boolean,
+    // });
+    // game.settings.register(moduleName, "addUnconsciousZeroHP", {
+    //     name: "Add unconscious condition at zero hp",
+    //     hint: "Auto add unconscious if dying is removed but still at zero hp (for all actor)",
+    //     scope: "world",
+    //     config: true,
+    //     default: false,
+    //     type: Boolean,
+    // });
+    // game.settings.register(moduleName, "removeUnconsciousWhenHeal", {
+    //     name: "Remove unconscious when actor is healed",
+    //     hint: "Auto remove unconscious if healed above 0 hp (for all actor)",
+    //     scope: "world",
+    //     config: true,
+    //     default: false,
+    //     type: Boolean,
+    // });
+    // game.settings.register(moduleName, "addWounded", {
+    //     name: "Add wounded when dying is removed",
+    //     hint: "Auto increase wounded condition when dying is removed",
+    //     scope: "world",
+    //     config: true,
+    //     default: false,
+    //     type: Boolean,
+    // });
     game.settings.register(moduleName, "checkNonLethal", {
         name: "Check  Non-lethal damage",
         hint: "Non-lethal damage doesn't add dying but unconscious when set to 0 hp",
@@ -188,7 +188,6 @@ Hooks.on('createChatMessage', async (message) => {
                 return;
             }
             if (isInstaKill(actor)) {
-                n
                 setMaxDying(actor);
             } else {
                 const dyingValue = actor.getCondition("dying")?.value ?? 0;
@@ -203,7 +202,7 @@ Hooks.on('createChatMessage', async (message) => {
     }
 });
 
-Hooks.on('updateActor', async (actor, data, diff, id) => {
+Hooks.on('updateActor', async (actor, data, diff) => {
     if (!isGM()) {
         return
     }
@@ -220,40 +219,40 @@ Hooks.on('updateActor', async (actor, data, diff, id) => {
         await actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
     }
 
-    if (game.settings.get(moduleName, "removeUnconsciousWhenHeal")) {
-        if (data?.system?.attributes?.hp?.value > 0 && (data.system.attributes.hp.value + diff.damageTaken) === 0) {
-            if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
-                await actor.decreaseCondition('unconscious')
-                await actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
-            }
+    // if (game.settings.get(moduleName, "removeUnconsciousWhenHeal")) {
+    if (data?.system?.attributes?.hp?.value > 0 && (data.system.attributes.hp.value + diff.damageTaken) === 0) {
+        if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
+            await actor.decreaseCondition('unconscious')
+            await actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
         }
     }
+    // }
 
-    if (game.settings.get(moduleName, "addDeathCondition")) {
-        if (data?.system?.attributes?.hp?.value === 0 && ["character", "familiar"].includes(actor?.type) && !hasCondition(actor, "dying") && !actor.traits.has('eidolon')) {
-            if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
-                if (!hasCondition(actor, "unconscious")) {
-                    await actor.increaseCondition('unconscious');
-                }
-                await toggleActorDead(actor)
-                return;
-            }
-            if (isInstaKill(actor)) {
-                setMaxDying(actor);
-            } else {
-                let val = (actor.getCondition("wounded")?.value ?? 0) + (isDamageCrit(actor) ? 2 : 1);
-                if (val > actor.attributes.dying.max) {
-                    val = actor.attributes.dying.max;
-                }
-                if (val === actor.attributes.dying.max) {
-                    setMaxDying(actor, true);
-                } else {
-                    await actor.increaseCondition('dying', {'value': val})
-                }
+    // if (game.settings.get(moduleName, "addDeathCondition")) {
+    if (data?.system?.attributes?.hp?.value === 0 && ["character", "familiar"].includes(actor?.type) && !hasCondition(actor, "dying") && !actor.traits.has('eidolon')) {
+        if (game.settings.get(moduleName, "checkNonLethal") && isDamageNonLethal(actor.uuid)) {
+            if (!hasCondition(actor, "unconscious")) {
+                await actor.increaseCondition('unconscious');
             }
             await toggleActorDead(actor)
+            return;
         }
+        if (isInstaKill(actor)) {
+            setMaxDying(actor);
+        } else {
+            let val = (actor.getCondition("wounded")?.value ?? 0) + (isDamageCrit(actor) ? 2 : 1);
+            if (val > actor.attributes.dying.max) {
+                val = actor.attributes.dying.max;
+            }
+            if (val === actor.attributes.dying.max) {
+                setMaxDying(actor, true);
+            } else {
+                await actor.increaseCondition('dying', {'value': val})
+            }
+        }
+        await toggleActorDead(actor)
     }
+    // }
 });
 
 async function toggleActorDead(actor) {
@@ -280,16 +279,17 @@ async function toggleLinkedActorDead(actor) {
     ActiveEffect.implementation.create(effect, {parent: actor, keepId: true});
 }
 
-Hooks.on('deleteItem', async (item, data, diff, id) => {
+Hooks.on('deleteItem', async (item) => {
     if (!isGM()) {
         return
     }
-    if (game.settings.get(moduleName, "addUnconsciousZeroHP") && item.slug === 'dying') {
-        if (item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
-            await item.actor.increaseCondition('unconscious');
-        }
+    // if (game.settings.get(moduleName, "addUnconsciousZeroHP") && item.slug === 'dying') {
+    if (item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
+        await item.actor.increaseCondition('unconscious');
     }
-    if (game.settings.get(moduleName, "addWounded") && item.slug === 'dying' && !item.getFlag(moduleName, "heroicRecovery")) {
+    // }
+    if (//game.settings.get(moduleName, "addWounded") &&
+        item.slug === 'dying' && !item.getFlag(moduleName, "heroicRecovery")) {
         await item.actor.increaseCondition('wounded')
     }
 
@@ -298,7 +298,7 @@ Hooks.on('deleteItem', async (item, data, diff, id) => {
     }
 });
 
-Hooks.on('createItem', async (item, data, diff, id) => {
+Hooks.on('createItem', async (item) => {
     if (!isGM() || !item.actor) {
         return
     }
