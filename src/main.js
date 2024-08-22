@@ -161,6 +161,13 @@ Hooks.once("init", () => {
         },
         default: "no",
     });
+    game.settings.register(moduleName, "unconsciousLayer", {
+        name: "Add unconscious layer when actor is dying",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean,
+    });
 
     game.pf2eDying = foundry.utils.mergeObject(game.pf2eDying ?? {}, {
         "heroicRecovery": heroicRecovery,
@@ -270,6 +277,7 @@ async function toggleActorDead(actor) {
 }
 
 async function toggleLinkedActorDead(actor) {
+    if (!game.settings.get(moduleName, "unconsciousLayer")) {return}
     if (actor.effects.find(a=>a.statuses.has('unconscious'))) {return}
     let effect = await ActiveEffect.implementation.fromStatusEffect("unconscious");
     effect.img = 'icons/svg/unconscious.svg'

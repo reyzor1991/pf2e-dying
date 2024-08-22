@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.1
+- Add setting for unconscious 
+
 ## Version 0.2.0
 - Delete unneeded conditions
 
