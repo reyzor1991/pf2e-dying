@@ -209,6 +209,15 @@ Hooks.on('createChatMessage', async (message) => {
     }
 });
 
+Hooks.on('preUpdateActor', (actor, data) => {
+    if (actor.system?.attributes?.hp?.value  === 0 && data?.system?.attributes?.hp?.value > 0) {
+        if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
+            actor.decreaseCondition('unconscious')
+            actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
+        }
+    }
+});
+
 Hooks.on('updateActor', async (actor, data, diff) => {
     if (!isGM()) {
         return
@@ -227,12 +236,14 @@ Hooks.on('updateActor', async (actor, data, diff) => {
     }
 
     // if (game.settings.get(moduleName, "removeUnconsciousWhenHeal")) {
-    if (data?.system?.attributes?.hp?.value > 0 && (data.system.attributes.hp.value + diff.damageTaken) === 0) {
-        if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
-            await actor.decreaseCondition('unconscious')
-            await actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
-        }
-    }
+    // if (data?.system?.attributes?.hp?.value > 0) {
+    //     if ((data.system.attributes.hp.value - diff.damageTaken) === 0) {
+    //         if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
+    //             await actor.decreaseCondition('unconscious')
+    //             await actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
+    //         }
+    //     }
+    // }
     // }
 
     // if (game.settings.get(moduleName, "addDeathCondition")) {
@@ -291,8 +302,8 @@ Hooks.on('deleteItem', async (item) => {
     if (!isGM()) {
         return
     }
-    // if (game.settings.get(moduleName, "addUnconsciousZeroHP") && item.slug === 'dying') {
-    if (item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
+    if (//game.settings.get(moduleName, "addUnconsciousZeroHP") &&
+        item.slug === 'dying' && item.actor?.system?.attributes?.hp?.value === 0 && !hasCondition(item.actor, "unconscious")) {
         await item.actor.increaseCondition('unconscious');
     }
     // }

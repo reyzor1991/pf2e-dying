@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.2
+- Fix unconscious layer
+
 ## Version 0.2.1
 - Add setting for unconscious 
 
