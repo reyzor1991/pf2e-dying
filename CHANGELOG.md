@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.4
+- Optimization
+
 ## Version 0.2.3
 - Small fixes
 
