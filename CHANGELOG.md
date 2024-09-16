@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.2.3
+- Small fixes
+
 ## Version 0.2.2
 - Fix unconscious layer
 

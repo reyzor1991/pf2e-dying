@@ -213,8 +213,8 @@ Hooks.on('preUpdateActor', (actor, data) => {
     if (actor.system?.attributes?.hp?.value  === 0 && data?.system?.attributes?.hp?.value > 0) {
         if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
             actor.decreaseCondition('unconscious')
-            actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
         }
+        actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
     }
 });
 
