@@ -136,6 +136,14 @@ Hooks.once("init", () => {
         default: false,
         type: Boolean,
     });
+    game.settings.register(moduleName, "deactivateRegeneration", {
+        name: "Deactivate Regeneration when creature has max dying condition",
+        hint: "Not rollback operation",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean,
+    });
 
     game.pf2eDying = foundry.utils.mergeObject(game.pf2eDying ?? {}, {
         "heroicRecovery": heroicRecovery,
@@ -317,3 +325,27 @@ async function rotateActor(actor) {
         }
     }
 }
+
+Hooks.on('updateItem', async (item) => {
+    if (!game.settings.get(moduleName, "deactivateRegeneration")) {return}
+
+    if (!isGM() || !item.actor || item.slug !== "dying") {
+        return
+    }
+    if (item.system.value.value !== item.actor.system.attributes.dying.max) {
+        return
+    }
+
+    let action = item.actor.itemTypes.action.find(a => a.rules.find(r => r.key === 'FastHealing' && !r.ignored && r.type === 'regeneration'))
+    if (!action) {
+        return
+    }
+    let allRules = foundry.utils.deepClone(action._source.system.rules);
+    let rule = allRules.find(r => r.key === 'FastHealing' && !r.ignored && r.type === 'regeneration')
+    if (!rule) {
+        return
+    }
+
+    rule.ignored = true;
+    await action.update({'system.rules': allRules});
+});

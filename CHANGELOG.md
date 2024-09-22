@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.3.0
+- Deactivate Regeneration when max dying condition
+
 ## Version 0.2.4
 - Optimization
 
