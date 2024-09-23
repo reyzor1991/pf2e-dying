@@ -13,8 +13,7 @@ function criticalFailureMessageOutcome(message) {
 }
 
 function isDamageNonLethal(uuid) {
-    const lDam = game.messages.contents.slice(-10)
-        .findLast(m => m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid);
+    const lDam = lastDamageMessage(uuid)
     if (lDam) {
         return (Number(lDam.content) > 0) && lDam?.item?.traits?.has('nonlethal')
     }
@@ -22,7 +21,7 @@ function isDamageNonLethal(uuid) {
 }
 
 function isInstantKill(actor) {
-    const lMes = lastDamageMessage(actor);
+    const lMes = lastDamageMessage(actor.uuid);
     if (!lMes) {
         return false;
     }
@@ -32,20 +31,27 @@ function isInstantKill(actor) {
         || (actor.attributes.hp.value === 0 && lMes?.item?.traits?.has('death'));
 }
 
-function lastDamageMessage(actor) {
-    return game.messages.contents.slice(-15).findLast(m =>
-        (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === actor.uuid)
-        || (m?.flags?.pf2e?.context?.type === "saving-throw" && m?.flags?.pf2e?.context?.actor === actor.id)
-        || (m?.flags?.pf2e?.context?.type === "damage-roll" && m?.flags?.pf2e?.context?.sourceType === "save"));
+function lastDamageMessage(uuid) {
+    return game.messages.contents.slice(-3).findLast(m =>
+        m?.flags?.pf2e?.context?.type === "damage-roll"
+            && (
+                (m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid)
+                || m?.flags?.pf2e?.context?.sourceType === "save"
+            )
+    );
 }
 
 function isDamageCritical(actor) {
-    const lDam = lastDamageMessage(actor);
+    const lDam = lastDamageMessage(actor.uuid);
     if (lDam) {
-        if (lDam.flags.pf2e.context.type === "damage-roll") {
+        if (lDam.flags.pf2e.context.sourceType === "attack") {
             return criticalSuccessMessageOutcome(lDam);
         }
-        return criticalFailureMessageOutcome(lDam);
+        let lastSave = game.messages.contents.slice(-15).findLast(m=>
+            m.item===lDam.item && m.flags.pf2e?.context?.type === "saving-throw"
+            && m.actor?.uuid === actor.uuid
+        )
+        return criticalFailureMessageOutcome(lastSave);
     }
     return false;
 }
@@ -80,7 +86,7 @@ async function changeInitiative(combatant) {
     if (!combatant) {
         return
     }
-    if (!game.combat) {
+    if (!game.combat || !game.combat.combatant) {
         return
     }
     if (!game.settings.get(moduleName, "move")) {
@@ -171,12 +177,12 @@ Hooks.on('createChatMessage', async (message) => {
                 return;
             }
             if (isInstantKill(actor)) {
-                setMaxDying(actor);
+                await setMaxDying(actor);
             } else {
                 const dyingValue = actor.getCondition("dying")?.value ?? 0;
                 let val = (isDamageCritical(actor) ? 2 : 1);
                 if ((dyingValue + val) >= actor.attributes.dying.max) {
-                    setMaxDying(actor, true);
+                    await setMaxDying(actor, true);
                     return
                 }
                 await actor.increaseCondition('dying', {'value': val})
@@ -186,11 +192,11 @@ Hooks.on('createChatMessage', async (message) => {
 });
 
 Hooks.on('preUpdateActor', (actor, data) => {
-    if (actor.system?.attributes?.hp?.value  === 0 && data?.system?.attributes?.hp?.value > 0) {
+    if (actor.system?.attributes?.hp?.value === 0 && data?.system?.attributes?.hp?.value > 0) {
         if (hasCondition(actor, "unconscious") && !hasCondition(actor, "dying")) {
             actor.decreaseCondition('unconscious')
         }
-        actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
+        actor.effects.find(a => a.statuses.has('unconscious'))?.delete()
     }
 });
 
@@ -208,7 +214,7 @@ Hooks.on('updateActor', async (actor, data) => {
         if (hasCondition(actor, "unconscious")) {
             await actor.decreaseCondition('unconscious');
         }
-        await actor.effects.find(a=>a.statuses.has('unconscious'))?.delete()
+        await actor.effects.find(a => a.statuses.has('unconscious'))?.delete()
     }
 
     if (data?.system?.attributes?.hp?.value === 0 && ["character", "familiar"].includes(actor?.type) && !hasCondition(actor, "dying") && !actor.traits.has('eidolon')) {
@@ -220,14 +226,14 @@ Hooks.on('updateActor', async (actor, data) => {
             return;
         }
         if (isInstantKill(actor)) {
-            setMaxDying(actor);
+            await setMaxDying(actor);
         } else {
             let val = (actor.getCondition("wounded")?.value ?? 0) + (isDamageCritical(actor) ? 2 : 1);
             if (val > actor.attributes.dying.max) {
                 val = actor.attributes.dying.max;
             }
             if (val === actor.attributes.dying.max) {
-                setMaxDying(actor, true);
+                await setMaxDying(actor, true);
             } else {
                 await actor.increaseCondition('dying', {'value': val})
             }
@@ -251,11 +257,15 @@ async function toggleActorDead(actor) {
 }
 
 async function toggleLinkedActorDead(actor) {
-    if (!game.settings.get(moduleName, "unconsciousLayer")) {return}
-    if (actor.effects.find(a=>a.statuses.has('unconscious'))) {return}
+    if (!game.settings.get(moduleName, "unconsciousLayer")) {
+        return
+    }
+    if (actor.effects.find(a => a.statuses.has('unconscious'))) {
+        return
+    }
     let effect = await ActiveEffect.implementation.fromStatusEffect("unconscious");
     effect.img = 'icons/svg/unconscious.svg'
-    effect._source.img =  'icons/svg/unconscious.svg'
+    effect._source.img = 'icons/svg/unconscious.svg'
     effect.updateSource({"flags.core.overlay": true})
 
     ActiveEffect.implementation.create(effect, {parent: actor, keepId: true});
@@ -327,7 +337,9 @@ async function rotateActor(actor) {
 }
 
 Hooks.on('updateItem', async (item) => {
-    if (!game.settings.get(moduleName, "deactivateRegeneration")) {return}
+    if (!game.settings.get(moduleName, "deactivateRegeneration")) {
+        return
+    }
 
     if (!isGM() || !item.actor || item.slug !== "dying") {
         return

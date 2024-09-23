@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.3.1
+- Fix change initiative
+- Fix checking crit damage
+
 ## Version 0.3.0
 - Deactivate Regeneration when max dying condition
 
