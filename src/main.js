@@ -251,7 +251,7 @@ async function toggleActorDead(actor) {
         await actor.toggleStatusEffect("dead", {overlay: true});
     }
 
-    if (actor.combatant) {
+    if (actor.combatant && actor.combatant.actor === actor) {
         await changeInitiative(actor.combatant);
     }
 }

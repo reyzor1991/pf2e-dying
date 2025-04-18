@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.3.2
+- Fix updating familiar initiative
+
 ## Version 0.3.1
 - Fix change initiative
 - Fix checking crit damage
