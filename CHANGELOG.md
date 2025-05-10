@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.4.0
+- V13
+
 ## Version 0.3.2
 - Fix updating familiar initiative
 
