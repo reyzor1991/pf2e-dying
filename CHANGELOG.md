@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.4.1
+- add additional statuses effect checking
+
 ## Version 0.4.0
 - V13
 

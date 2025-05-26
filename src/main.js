@@ -33,7 +33,7 @@ function isInstantKill(actor) {
 
 function lastDamageMessage(uuid) {
     return game.messages.contents.slice(-3).findLast(m =>
-        m?.flags?.pf2e?.context?.type === "damage-roll"
+            m?.flags?.pf2e?.context?.type === "damage-roll"
             && (
                 (m?.flags?.pf2e?.context?.sourceType === "attack" && m?.flags?.pf2e?.context?.target?.actor === uuid)
                 || m?.flags?.pf2e?.context?.sourceType === "save"
@@ -47,8 +47,8 @@ function isDamageCritical(actor) {
         if (lDam.flags.pf2e.context.sourceType === "attack") {
             return criticalSuccessMessageOutcome(lDam);
         }
-        let lastSave = game.messages.contents.slice(-15).findLast(m=>
-            m.item===lDam.item && m.flags.pf2e?.context?.type === "saving-throw"
+        let lastSave = game.messages.contents.slice(-15).findLast(m =>
+            m.item === lDam.item && m.flags.pf2e?.context?.type === "saving-throw"
             && m.actor?.uuid === actor.uuid
         )
         return criticalFailureMessageOutcome(lastSave);
@@ -141,6 +141,13 @@ Hooks.once("init", () => {
         config: true,
         default: false,
         type: Boolean,
+        onChange: (value) => {
+            if (!value) {
+                game.actors.forEach(a => {
+                    a.effects.find(a => a.statuses.has('unconscious'))?.delete()
+                })
+            }
+        },
     });
     game.settings.register(moduleName, "deactivateRegeneration", {
         name: "Deactivate Regeneration when creature has max dying condition",
@@ -197,6 +204,8 @@ Hooks.on('preUpdateActor', (actor, data) => {
             actor.decreaseCondition('unconscious')
         }
         actor.effects.find(a => a.statuses.has('unconscious'))?.delete()
+    } else if (actor.system?.attributes?.hp?.value > 0 && data?.system?.attributes?.hp?.value > 0) {
+        actor.effects.find(a => a.statuses.has('unconscious'))?.delete()
     }
 });
 
@@ -214,7 +223,7 @@ Hooks.on('updateActor', async (actor, data) => {
         if (hasCondition(actor, "unconscious")) {
             await actor.decreaseCondition('unconscious');
         }
-        await actor.effects.find(a => a.statuses.has('unconscious'))?.delete()
+        actor.effects.find(a => a.statuses.has('unconscious'))?.delete()
     }
 
     if (data?.system?.attributes?.hp?.value === 0 && ["character", "familiar"].includes(actor?.type) && !hasCondition(actor, "dying") && !actor.traits.has('eidolon')) {
