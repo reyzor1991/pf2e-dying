@@ -2,7 +2,7 @@
   "id": "pf2e-dying",
   "title": "PF2e Dying",
   "description": "PF2e Dying.",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "authors": [
     {
       "name": "Reyzor",
@@ -31,12 +31,13 @@
   ],
   "media": [],
   "compatibility": {
-    "minimum": "11",
-    "verified": "13.342"
+    "minimum": "14.360",
+    "verified": "14.360",
+    "maximum": "14.999"
   },
   "url": "https://github.com/reyzor1991/pf2e-wiki/wiki/PF2e-Dying",
-  "manifest": "https://www.dropbox.com/scl/fi/v1c8irfqt8xslcc5r22l5/module.json?rlkey=w5mowxk9cx2zojipy9otq2otf&dl=1",
-  "download": "https://www.dropbox.com/scl/fi/lolhgdvqd8ifkesjp3z6l/pf2e-dying.zip?rlkey=lospxujrezvf0gz0vzmp4lxfy&dl=1",
+  "manifest": "https://www.dropbox.com/scl/fi/jdx737ckbgyel2lzyjawc/module.json?rlkey=aod4ff2um1ay6nbr4x89gqm9y&st=fu7fehiy&dl=1",
+  "download": "https://www.dropbox.com/scl/fi/h0p9re89z5kc5fj94he7f/pf2e-dying.zip?rlkey=v7nsa0jeiyo6h87t6yw0afywp&st=tdvi2qcn&dl=1",
   "changelog": "https://github.com/reyzor1991/pf2e-dying/blob/master/CHANGELOG.md",
   "readme": "https://github.com/reyzor1991/pf2e-dying/blob/master/README.md",
   "bugs": "https://github.com/reyzor1991/pf2e-dying/issues",
