@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.5.1
+- New setting
+- Not delete prone from actor when unconscious is deleted 
+
 ## Version 0.5.0
 - v14
 

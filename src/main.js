@@ -149,6 +149,14 @@ Hooks.once("init", () => {
             }
         },
     });
+    game.settings.register(moduleName, "stillProne", {
+        name: "Not delete prone from actor when unconscious is deleted",
+        hint: "",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean,
+    });
     game.settings.register(moduleName, "deactivateRegeneration", {
         name: "Deactivate Regeneration when creature has max dying condition",
         hint: "Not rollback operation",
@@ -169,6 +177,10 @@ Hooks.once("init", () => {
             : origin.call(this, data, operation, user)
     }
 });
+
+function needProne() {
+    return game.settings.get(moduleName, "stillProne");
+}
 
 Hooks.on('createChatMessage', async (message) => {
     if (!isGM()) {
@@ -295,6 +307,12 @@ Hooks.on('deleteItem', async (item) => {
 
     if (['unconscious', 'prone'].includes(item.slug)) {
         await rotateActor(item.actor)
+    }
+});
+
+Hooks.on('preCreateItem', async (item, options) => {
+    if (needProne() && item.slug === 'unconscious') {
+        item.updateSource({"flags.pf2e.itemGrants.-=prone": null});
     }
 });
 

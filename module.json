@@ -2,7 +2,7 @@
   "id": "pf2e-dying",
   "title": "PF2e Dying",
   "description": "PF2e Dying.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "authors": [
     {
       "name": "Reyzor",
@@ -32,7 +32,7 @@
   "media": [],
   "compatibility": {
     "minimum": "14.360",
-    "verified": "14.360",
+    "verified": "14.363",
     "maximum": "14.999"
   },
   "url": "https://github.com/reyzor1991/pf2e-wiki/wiki/PF2e-Dying",
@@ -49,7 +49,7 @@
         "manifest": "https://github.com/foundryvtt/pf2e/releases/latest/download/system.json",
         "compatibility": {
           "minimum": "8.0.2",
-          "verified": "8.0.2"
+          "verified": "8.1.2"
         }
       }
     ],
