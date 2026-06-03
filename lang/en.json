@@ -1,0 +1,41 @@
+{
+  "pf2e-dying": {
+    "chat": {
+      "deadBecauseOfDamage": "{actorName} is dead because of damage",
+      "deadBecauseOfMaxDying": "{actorName} is dead because of max dying condition"
+    },
+    "notifications": {
+      "needDyingCondition": "Need to have Dying condition",
+      "needHeroPoint": "Need to have at least 1 Hero Point",
+      "heroRecovered": "Hero was recovered!"
+    },
+    "settings": {
+      "checkNonLethal": {
+        "name": "Check non-lethal damage",
+        "hint": "Non-lethal damage doesn't add dying, but applies unconscious at 0 HP"
+      },
+      "move": {
+        "name": "Change initiative when gaining dying"
+      },
+      "rotateState": {
+        "name": "Rotate token when condition is applied",
+        "choices": {
+          "no": "No rotate",
+          "unconscious": "Unconscious",
+          "unconsciousProne": "Unconscious or prone"
+        }
+      },
+      "unconsciousLayer": {
+        "name": "Add unconscious overlay when actor is dying"
+      },
+      "stillProne": {
+        "name": "Keep prone when unconscious is removed",
+        "hint": ""
+      },
+      "deactivateRegeneration": {
+        "name": "Deactivate regeneration at max dying",
+        "hint": "This operation is not rolled back automatically"
+      }
+    }
+  }
+}

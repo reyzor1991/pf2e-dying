@@ -1,0 +1,41 @@
+{
+  "pf2e-dying": {
+    "chat": {
+      "deadBecauseOfDamage": "{actorName} помирає від ушкоджень",
+      "deadBecauseOfMaxDying": "{actorName} помирає через максимальний стан dying"
+    },
+    "notifications": {
+      "needDyingCondition": "Потрібно мати стан Dying",
+      "needHeroPoint": "Потрібно мати щонайменше 1 Hero Point",
+      "heroRecovered": "Герой отямився!"
+    },
+    "settings": {
+      "checkNonLethal": {
+        "name": "Перевіряти нелетальні ушкодження",
+        "hint": "Нелетальні ушкодження не додають dying, але накладають unconscious при 0 HP"
+      },
+      "move": {
+        "name": "Змінювати ініціативу при отриманні dying"
+      },
+      "rotateState": {
+        "name": "Повертати токен при накладанні стану",
+        "choices": {
+          "no": "Не повертати",
+          "unconscious": "Unconscious",
+          "unconsciousProne": "Unconscious або Prone"
+        }
+      },
+      "unconsciousLayer": {
+        "name": "Додавати unconscious overlay, коли актор має dying"
+      },
+      "stillProne": {
+        "name": "Залишати prone, коли unconscious видаляється",
+        "hint": ""
+      },
+      "deactivateRegeneration": {
+        "name": "Вимикати regeneration на максимальному dying",
+        "hint": "Ця операція не відкочується автоматично"
+      }
+    }
+  }
+}

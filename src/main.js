@@ -1,5 +1,13 @@
 const moduleName = "pf2e-dying";
 
+function localize(key) {
+    return game.i18n.localize(`${moduleName}.${key}`);
+}
+
+function format(key, data = {}) {
+    return game.i18n.format(`${moduleName}.${key}`, data);
+}
+
 function hasCondition(actor, con) {
     return actor?.itemTypes?.condition?.find((c => c.type === "condition" && con === c.slug))
 }
@@ -59,7 +67,9 @@ function isDamageCritical(actor) {
 async function setMaxDying(actor, isMax = false) {
     await actor.increaseCondition('dying', {'value': actor.attributes.dying.max});
     ChatMessage.create({
-        flavor: isMax ? `${actor.name} is dead because of max dying condition` : `${actor.name} is dead because of damage`,
+        flavor: isMax
+            ? format("chat.deadBecauseOfMaxDying", {actorName: actor.name})
+            : format("chat.deadBecauseOfDamage", {actorName: actor.name}),
         speaker: ChatMessage.getSpeaker({actor}),
     }).then();
 }
@@ -67,11 +77,11 @@ async function setMaxDying(actor, isMax = false) {
 async function heroicRecovery(actor) {
     const dying = hasCondition(actor, "dying");
     if (!dying) {
-        ui.notifications.info("Need to have Dying condition");
+        ui.notifications.info(localize("notifications.needDyingCondition"));
         return;
     }
     if (actor.system.resources.heroPoints.value === 0) {
-        ui.notifications.info("Need to have at least 1 Hero Point");
+        ui.notifications.info(localize("notifications.needHeroPoint"));
         return;
     }
     await actor.update({"system.resources.heroPoints.value": 0});
@@ -79,7 +89,7 @@ async function heroicRecovery(actor) {
     await dying.setFlag(moduleName, "heroicRecovery", true);
     await dying.delete();
 
-    ui.notifications.info("Hero was recovered!");
+    ui.notifications.info(localize("notifications.heroRecovered"));
 }
 
 async function changeInitiative(combatant) {
@@ -109,34 +119,34 @@ async function changeInitiative(combatant) {
 
 Hooks.once("init", () => {
     game.settings.register(moduleName, "checkNonLethal", {
-        name: "Check  Non-lethal damage",
-        hint: "Non-lethal damage doesn't add dying but unconscious when set to 0 hp",
+        name: localize("settings.checkNonLethal.name"),
+        hint: localize("settings.checkNonLethal.hint"),
         scope: "world",
         config: true,
         default: false,
         type: Boolean,
     });
     game.settings.register(moduleName, "move", {
-        name: "Change initiative when get dying condition",
+        name: localize("settings.move.name"),
         scope: "world",
         config: true,
         default: false,
         type: Boolean,
     });
     game.settings.register(moduleName, "rotateState", {
-        name: "Rotate Token when has condition",
+        name: localize("settings.rotateState.name"),
         scope: "world",
         config: true,
         type: String,
         choices: {
-            no: 'No Rotate',
-            unconscious: 'Unconscious',
-            unconsciousProne: 'Unconscious or Prone',
+            no: localize("settings.rotateState.choices.no"),
+            unconscious: localize("settings.rotateState.choices.unconscious"),
+            unconsciousProne: localize("settings.rotateState.choices.unconsciousProne"),
         },
         default: "no",
     });
     game.settings.register(moduleName, "unconsciousLayer", {
-        name: "Add unconscious layer when actor is dying",
+        name: localize("settings.unconsciousLayer.name"),
         scope: "world",
         config: true,
         default: false,
@@ -150,16 +160,16 @@ Hooks.once("init", () => {
         },
     });
     game.settings.register(moduleName, "stillProne", {
-        name: "Not delete prone from actor when unconscious is deleted",
-        hint: "",
+        name: localize("settings.stillProne.name"),
+        hint: localize("settings.stillProne.hint"),
         scope: "world",
         config: true,
         default: false,
         type: Boolean,
     });
     game.settings.register(moduleName, "deactivateRegeneration", {
-        name: "Deactivate Regeneration when creature has max dying condition",
-        hint: "Not rollback operation",
+        name: localize("settings.deactivateRegeneration.name"),
+        hint: localize("settings.deactivateRegeneration.hint"),
         scope: "world",
         config: true,
         default: false,
